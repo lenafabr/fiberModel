@@ -1,0 +1,1342 @@
+\documentclass[12pt,dvips]{article}
+\usepackage{url,setspace,amsmath}
+\setlength{\oddsidemargin}{-8mm}
+\setlength{\evensidemargin}{0mm}
+\setlength{\textwidth}{175mm}
+\setlength{\topmargin}{-5mm}
+\setlength{\textheight}{240mm}
+\setlength{\headheight}{0cm}
+\setstretch{1}
+
+\begin{document}
+\title{\vspace{-2cm}Documentation for fiberModel package: modeling regular chromatin fibers}
+\author{E.~F.~Koslover, C.~J.~Fuller,A.~F.~Straight, A.~J.~Spakowitz}
+\date{Last updated \today}
+\maketitle
+
+The code in this package will find locally optimized structures of regular helical chromatin fibers, taking into account the elasticity of the DNA linkers and steric packing of cylindrical nucleosomes and linker DNA. In addition, the code can be used more generically to find optimal paths of a discretized worm-like chain with fixed end conditions (e.g., looping of DNA off of a single nucleosome). Local minimization, certain geometry constraints, and basin hopping to search through different local minima are all implemented. 
+Currently, no internucleosomal potentials outside of cylindrical sterics are included.
+
+\tableofcontents
+\newpage
+
+\section{Compilation and Testing Instructions}
+To compile and run the program, you will need the following:
+\begin{itemize}
+\item a compiler capable of handling Fortran90.
+The code has been tested with gfortran, g95, and pgf90  compilers. The default compiler is gfortran.
+\item BLAS and LAPACK libraries installed in a place where the compiler knows to look for them
+\item Python (version 2.5 or higher) to run various auxiliary scripts
+  (e.g., for visualization). The scripts have been tested with Python
+  2.6.4 only. You will also need the NumPy extension package.
+\item Recommended: PyMOL to visualize pdb files.
+\end{itemize}
+
+The code has been tested on Ubuntu Linux and Mac OsX systems. 
+
+To compile with gfortran, go into the \path=source= directory. Type \verb=make=.
+To compile with any other compiler that can handle Fortran90, type
+\begin{verbatim}
+make FC=compiler
+\end{verbatim}
+substituting in the command you usually use to call the compiler. 
+
+If the compilation works properly, the executable \path=fiberModel.exe= will appear in the main directory.
+
+To test that the code is running properly, go into the \path=testing= directory and type 
+\begin{verbatim}
+./runalltests.py
+\end{verbatim}
+This will run a number of test calculations to make sure everything works properly. The tests may take a few minutes to complete.
+
+\section{Usage Instructions}
+To run the program in the main directory, type:
+\begin{verbatim}
+./fiberModel.exe suffix
+\end{verbatim}
+
+Here, \verb=suffix= can be any string up to 100 characters in length. 
+The program reads in all input information from a file named
+\path=param.suffix= where, again, \verb=suffix= is the command-line
+argument. If no argument is supplied, it will look for a file named
+\path=param=. If the desired parameter file does not exist, the
+program will exit with an error. You can supply multiple suffixes to read in multiple parameter files.
+
+The parameters in the input file are given in the format "{\em KEYWORD} value" where the possible keywords and values are described
+in Section \ref{sec:keywords}. Each keyword goes on a separate
+line. Any line that starts with "\#" is treated as a comment and
+ignored. Any blank line is also ignored. The keywords in the parameter
+file are not case sensitive. For the most part, the order in which the
+keywords are given does not matter. All parameters have default
+values, so you need only specify keywords and values when you want to
+change something from the default.
+
+The {\em EXTRAPARAMFILES} keyword can be used to specify additional
+parameter files to be read for input, in addition to the original
+\path=param.suffix= files obtained from the command-line arguments.
+
+Instructions for running specific calculations are given in more
+detail in Section \ref{sec:tasks}. Example parameter files for the
+different calculations are provided in the \path=examples= directory.
+
+\section{Examples for a Quick Start}
+\subsection{Example 1}
+Suppose you want to find several locally minimized structures for a
+fiber with 45 bp linkers, where the height per nucleosome is fixed to
+1.5 nm. 
+
+Work in the \path=examples= directory.
+\begin{enumerate}
+\item Set up the parameter file.
+
+The parameter file \path=param.ex.basinhop= is
+designed to run such a calculation. You do not have to alter it for
+this example. The line
+``\verb=LINKLEN 15.3D0='' sets the linker length to the desired value
+in nm. The line ``\verb=STARTHELH 1.50='' indicates that we want to
+start with a structure that has a height of 1.5 nm per nucleosome and
+the line ``\verb=FIXHELIXPARAM 1='' indicates that we want the height
+per nucleosome fixed throughout the calculation. Note that the definition of the helical
+coordinates, in order, is given in Section \ref{sec:helrep}.
+The number of basin hops to run is set with the
+``\verb=NBASINHOP 50='' line.
+
+\item Run the code.
+
+On the command line, in the \path=examples= directory, type
+\begin{verbatim}
+../fiberModel.exe ex.basinhop
+\end{verbatim}
+A calculation with 50 basin hops will be run. The final output will
+give the energy, helix coordinates, and individual energy parts for
+each of the ten best structures found.
+The top 5 structures will be output (with 30 nucleosomes) into the files 
+\path=ex.basinhop.1.replic.out=, \path=ex.basinhop.2.replic.out=, etc.
+
+
+\item Convert output files to pdb.
+
+On the command line, still in the \path=examples= directory, type
+\begin{verbatim}
+../scripts/beadbranch2pdb.py ex.basinhop.*.replic.out -nbp 5
+\end{verbatim}
+This will convert the output structures to pdb, with 5 basepairs per
+linker segment.
+
+\item Visualize pdb structure files.
+
+Open up PyMOL and make sure its current directory is set to the main
+fiberModel directory. Load in all the \path=examples/ex.basinhop.*.replic.pdb= files. 
+A script file for doing so for this particular example is provided in 
+\path=examples/loadmovie-example1.py=
+Documentation on how to use PyMOL can be found at
+\path=http://www.pymol.org/=.
+
+You can load in the structures by typing within PyMOL:
+\begin{verbatim}
+run examples/loadmovie-example1.py
+\end{verbatim}
+
+To better visualize the structures, type within PyMOL:
+\begin{verbatim}
+@scripts/twistedchain.pml
+\end{verbatim}
+
+Click on the \verb=cylinders= object to hide the cylinders. Note that the
+nucleosome cylinders are not currently set up to work with multiple
+frames in PyMOL.
+You can now see the five best local minimum structures found with this
+short basinhop run.
+
+\end{enumerate}
+
+\subsection{Example 2}
+Suppose you want to find a locally minimized structure for a fiber with 40 bp linker length, 
+a nucleosome line density of 8 nucleosomes per 11 nm, and nucleosomes
+oriented with their symmetry axes perpendicular to the fiber
+axis. Again, work in the \path=examples= directory.
+
+\begin{enumerate}
+\item Set up the parameter file.
+
+Copy over one of the example optimization files (e.g.:
+\path=param.ex2.optimize=) to a new parameter file (e.g.:
+\path=param.example2=) in the main directory.
+
+Open up your new parameter file \path=param.example2= in a text
+editor. 
+
+You want a linker length of $40\text{bp} \times \frac{0.34
+  \text{nm}}{\text{bp}} = 13.6 \text{nm}$
+Alter the linker length line (starting with \verb=LINKLEN=) to 
+``\verb=LINKLEN 13.6=''.
+
+You want to fix the height to $h = 11/8 = 1.375$ nm per nucleosome. So
+alter the corresponding keyword line to
+``\verb=STARTHELH 1.375=''.
+This will set the starting structure to the right height per nucleosome.
+
+You want an angle of $\beta = \pi/2$ between the nucleosome axis and the fiber
+axis, to alter the corresponding keyword line to:
+``\verb=STARTHELB 1.57=''.
+ This will set the nucleosome tilt angle in the starting
+structure.
+
+You want the height per nucleosome (first helix coordinate) and the
+nucleosome tilt angle (fifth helix coordinate) fixed
+throughout the calculation, so alter the corresponding keyword line
+to
+``\verb=FIXHELIXPARAM 1 5=''.
+ Note that the definition of the helical
+coordinates, in order, is given in Section \ref{sec:helrep}.
+
+Finally, suppose you are interested in watching the fiber as it
+minimizes. You can tell the program to dump out a structure with 30
+nucleosomes after every 20 minimization steps by adding somewhere in
+the parameter file the line
+``\verb=DUMPCURRENT 20 30=''.
+In order to have the structures dumped into files named
+\path=example2.0.dump.out=, \path=example2.20.dump.out=, etc. add the
+following line somewhere in the parameter file:
+``\verb=DUMPFILE *.#.dump.out=''.
+
+Compare your \path=param.example2= file to \path=param.example2.ref=
+if you want to make sure the parameters are correctly set up.
+
+\item Run the code.
+
+On the command line, still in the examples directory,(assuming that is where
+your \path=param.example2= file is located), type
+\begin{verbatim}
+../fiberModel.exe example2
+\end{verbatim}
+The resulting output will tell you the final helix coordinates and
+energy associated with the optimized structure.
+
+\item Convert output files to pdb.
+
+On the command line, type
+\begin{verbatim}
+../scripts/beadbranch2pdb.py example2.*.dump.out -nbp 4
+\end{verbatim}
+This will convert all the output files dumped throughout the
+minimization to pdb, with 4 basepairs per linker segment.
+
+\item Visualize pdb structure files.
+
+Open up PyMOL and make sure its current directory is set to the main
+\path=fiberModel= directory. Load in all the \path=examples/example2.*.dump.pdb= files. 
+A script file for doing so for this particular example is provided in 
+\path=examples/loadmovie-example2.py=
+Documentation on how to use PyMOL can be found at
+\path=http://www.pymol.org/=.
+
+You can load in the structures by typing within PyMOL:
+\begin{verbatim}
+run examples/loadmovie-example2.py
+\end{verbatim}
+
+To better visualize the structures, type within PyMOL:
+\begin{verbatim}
+@scripts/twistedchain.pml
+\end{verbatim}
+
+Click on the cylinder object to hide the cylinders. Note that the
+nucleosome cylinders are not currently set up to work with multiple
+frames in PyMOL.
+You can now play the movie within PyMOL to watch the structure minimize.
+\end{enumerate}
+
+\section{Auxiliary Scripts}
+Several python scripts have been provided in the \path=scripts=
+directory for help in setting up parameter files and visualizing
+resulting structures.
+
+\subsection{Setting up parameter files}
+\begin{itemize}
+\item \path=geomFromPDB.py= \\
+This script will extract bound DNA beads (filler beads) and edge
+conditions from a PDB file containing single nucleosome coordinates. 
+{\bf WARNING:} this has only been tested with the 1KX5.pdb structure file
+and will not necessarily generalize to other files with slightly
+different formats. 
+
+The script can also generate end conditions for a partially unwrapped
+nucleosome.
+
+Run the script without arguments to print out usage information.
+Simplest run of the script is:
+\begin{verbatim}
+scripts/geomFromPDB.py examples/1KX5.pdb paramfile
+\end{verbatim}
+
+The script will replace any keywords {\em POSP, POSM, BENDTANP,
+  BENDTANM, XAXP, XAXM} already present in the parameter file. It will
+also generate a pdb file (\path=1KX5-mod.pdb= by default) which can be
+used to visualize the calculated end conditions. Use the
+\path=viewnucleosome.pml= script to visualize the resulting nucleosome
+structure in PyMOL.
+%
+\item \path=dnaloopFromPDB.py= \\
+This script will extract edge geometries and bound DNA beads from a pdb file for a DNA loop with edges fixed between two bound DNA basepairs on a nucleosome structure.
+{\bf WARNING:} this has only been tested with the 1KX5.pdb structure file
+and will not necessarily generalize to other files with slightly
+different formats. 
+
+Run the script without arguments to print out usage information.
+Simplest run of the script (to generate edge conditions for a DNA loop between the 10th and the 110th bound basepair) is:
+\begin{verbatim}
+scripts/dnaloopFromPDB.py examples/1KX5.pdb paramfile 10 110
+\end{verbatim}
+
+The script will replace any keywords {\em POSP, POSM, BENDTANP,
+  BENDTANM, XAXP, XAXM} already present in the parameter file. It will
+also generate a pdb file (\path=examples/1KX5-dnaloop.pdb= by default) which can be
+used to visualize the calculated end conditions. Use the
+\path=viewnucleosome.pml= script to view the resulting nucleosome
+structure in PyMOL.
+
+\end{itemize}
+
+\subsection{Visualizing structures}
+\begin{itemize}
+\item \path=beadbranch2pdb.py= \\
+This script will convert a structure file (or multiple files) output by the fibermodel.exe
+code (usually ending in the extension \path=.out=) to a PDB file that
+can be visualized with PyMOL. Run the script without any arguments for
+usage instructions and optional arguments
+Simplest usage to convert file \path=struct.out= to a PDB is,
+\begin{verbatim}
+scripts/beadbranch2pdb.py struct.out
+\end{verbatim}
+which will generate the file \path=struct.pdb=
+The \path=struct.out= file can also be replaced by a glob of
+filenames, such as \path=struct.*.out=
+
+Recommended sets of arguments for visualizing the results of the
+example runs are given within the \path=examples/param.ex.*= parameter files.
+
+The resulting pdb files are designed to be visualized in PyMOL with
+the script \path=scripts/twistedchain.pml=
+
+\item \path=twistedchain.pml= \\
+PyMOL script for visualizing a chromatin fiber pdb file generated with
+\path=beadbranch2pdb.py=
+
+Once the pdb file has been loaded into PyMOL, type
+\verb=@scripts/twistedchain.pml= to run the script (assuming the
+current directory for the PyMOL session is the main directory)
+
+In order for the nucleosomes to be visualized as cylinders
+automatically, the current directory of the PyMOL session must be the
+main fiberModel directory. Otherwise, visualization of the cylinders
+can be done manually using the \path=makeCylinders= function described below
+
+\item \path=makeCylinders= \\
+This function, designed for use within PyMOL will represent the
+nucleosomes as CGO cylinders. It is found in the file
+\path=scripts/displayCylinders.py=.
+ 
+Within PyMOL, to use this function you must first load it in by typing
+\begin{verbatim}
+run displayCylinders.py
+\end{verbatim}
+Note that this is done automatically if you run the
+\path=twistedchain.pml= visualization script. This needs to be done
+only once in a given PyMOL session.
+
+Run the function as follows:
+\begin{verbatim}
+makeCylinders AC, AC1, AC2, 52, 55, 0.5
+\end{verbatim}
+This looks for atoms named AC to define the nucleosome centers, atoms
+named AC1 and AC2 to define the cylinder axes (these defaults are the
+ones generated by the \path=beadbranch2pdb.py= script). The
+nucleosomes are then represented as cylinders of radius 52\AA, height
+55\AA, and transparance of $50\%$. 
+
+Note that to change the cylinder representation, you must first delete
+any ``cylinder'' object already present in the PyMOL session. Also,
+currently cylinders are not set up for multi-frame PyMOL sessions.
+
+\item \path=viewnucleosome.pml= \\
+PyMOL script to visualize the nucleosome geometry calculated with
+\path=bendFromPDB.py=.
+This will trace out the positions of the filler beads along the DNA
+axis and show the z-axes and x-axes defined by {\em BENDTANP,
+  BENDTANM, XAXP, XAXM} at either edge of the bound DNA.
+To run it within PyMOL (from the main directory, after loading in the
+1KX5-mod.pdb or equivalent structure), type:
+\begin{verbatim}
+@scripts/viewnucleosome.pml
+\end{verbatim}
+
+\item \path=viewsinglenuc.pml= \\
+PyMOL script to visualize an output pdb file as created by
+\path=beadbranch2pdb.py= after a calculation for a DNA loop on a
+single nucleosome (see Sec.\ref{sec:singlenuc}).
+
+This works almost exactly like \path=twistedchain.pml= but with a
+slightly different coloring scheme.
+\end{itemize}
+
+\section{Description of Specific Calculations}
+\label{sec:tasks}
+
+The {\em ACTION} keyword specifies what type of calculation will be
+done. The possible actions are to dump out a structure and its energy
+({\em ACTION} GETSTRUCT), run a gradient-based optimization ({\em
+  ACTION} OPTIMIZE), run a basin-hopping search ({\em ACTION}
+BASINHOP), or parse through a database generated by a previous
+basin-hopping search ({\em ACTION} DATABASEPARSE).
+
+\subsection{GETSTRUCT action}
+\label{sec:getstruct}
+The program simply outputs the starting structure of the nucleosome array, as well as printing out its energy and, if desired, certain geometric information.  See Sec. \ref{sec:startstruct} for how the starting structure is obtained.
+
+In addition to the keywords involved in setting up the 
+structure (Sec.~\ref{sec:startstruct}) and calculating the energy (Sec. \ref{sec:energy}), the following keywords are relevant for this action:
+{\em OUTFILE, REPLICATESTRUCT, PRINTENERGYPARTS, PRINTFIBERDIAM, PRINTNUCDIST}
+
+{\em OUTFILE} specifies the output file for the structure containing
+only 2 nucleosomes and the connecting linker. If {\em REPLICATESTRUCT}
+is supplied, then the structure will be replicated as a regular fiber
+to have more nucleosomes and the replicated configuration will be
+output in a different file. If {\em PRINTENERGYPARTS} is supplied, the
+individual components of the energy (bend, twist, stretch,
+nucleosome-nucleosome sterics, linker-linker sterics, and
+nucleosome-linker sterics) will be printed out. If {\em
+  PRINTFIBERDIAM} is supplied, the overall diameter of the fiber
+(stretching out to the furthest points of the cylindrical nucleosomes)
+will be printed out. If {\em PRINTFIBERDIAM} is supplied, the code
+will also print the distances between the cylindrical shell of the
+first nucleosome and that of each subsequent nucleosome.
+
+\path=examples/param.ex.getstruct=  and
+\path=examples/param.ex2.getstruct= are example files for this type of
+calculation.
+
+\subsection{OPTIMIZE action}
+Starting from a given structure of the fiber, use BFGS optimization\cite{Nocedal99} to
+find a nearby local minimum in the configuration space of regular
+fibers.
+
+In addition to the keywords associated with setting the starting
+structure (Sec.\ref{sec:startstruct}), calculating energies
+(Sec.\ref{sec:energy}), and outputting the final minimized
+structure (see all keywords in Sec.\ref{sec:getstruct}), the 
+ following keywords are relevant for this action:
+{\em OPTOL, DUMPCURRENT, DUMPFILE,  OPTPRINTFREQ, MAXOPTSTEP,
+  MAXOPTATTEMPT, VERBOSE, MAXEJUMP, MAXDCR, STEPDCR, MAXSTEPSIZE}
+
+The structure will be minimized until the mean square force falls
+below {\em OPTOL}. If {\em DUMPCURRENT} is set, then the current
+structure after every few minimization steps will be dumped out into
+{\em DUMPFILE}. This allows you to create a movie of the structure as it minimizes. 
+
+Information about the current energy, mean square force, and height per nucleosome of the structure is printed throughout the minimization at every {\em OPTPRINTFREQ} steps. The maximum number of allowed optimization steps is
+{\em MAXOPTSTEP}.
+
+\path=examples/param.ex.optimize= and
+\path=examples/param.ex2.optimize= are example files for this type of
+calculation.
+
+\subsection{BASINHOP action}
+Basin hopping\cite{Wales03} is a global optimization method which
+combines Monte-Carlo (MC) steps and gradient-based local
+minimization. After each MC step, the configuration is allowed to
+slide down into a nearby local minimum and it is this local minimum
+that defines the energy corresponding to that MC step.
+
+The following keywords are relevant specifically to the basin-hopping
+calculation: {\em RNGSEED, NBASINHOP,BHTOL, BHTEMP, NCONFIGSAVE, NCONFIGDUMP,
+  DBCONFIGMAXE, DATAFILE, READDATAFILE,  
+   MCSTARTRANGE, BHCHECKRANGE, BHFACC, BHFSAME, SAMECONF, MAXHOPTRY, FLIPNUCMC
+   DBMINIMIZE, OPTOL, DBSORT, PRINTENERGYPARTS,
+  PRINTFIBERDIAM, PRINTNUCDIST, DUMPFILE, REPLICATESTRUCT}
+
+The {\em RNGSEED} keyword can be used to seed the random number generator.
+
+The program carries out a total of {\em NBASINHOP} Monte Carlo hops,
+each of which is followed by local minimization to a tolerance of {\em
+  BHTOL}. The effective temperature used in deciding whether to accept
+each Monte Carlo hop is set by {\em BHTEMP}. Each new configuration
+found is saved in a database that contains up to {\em NCONFIGSAVE}
+structures ordered from lowest to highest energy. Any structures with
+an energy above {\em DBCONFIGMAXE} are not saved. Each time a new
+configuration is added to the database, the entire database of
+structures is output to the second file name specified by {\em DATAFILE}, which
+also tracks how many hops have been carried out thus far. If {\em
+  READDATAFILE} is set, then the program starts by reading in all
+structures from a previously generated database (first file name
+specified with {\em DATAFILE} and continuing the basin-hopping run
+from that point (starting with a certain number of hops already
+done). 
+
+The initial range of MC hop sizes is set with {\em
+  MCSTARTRANGE}. These ranges are adjusted every {\em BHCHECKRANGE}
+steps, in an attempt to maintain the fraction of accepted minima at
+{\em BHFACC} and the fraction of hops that end up minimizing into the
+same catchment basin at {\em BHFSAME}. The cutoffs used to determine
+whether two structures are the same are set with {\em SAMECONF}. In rare cases where the
+optimization to a local minimum fails, the MC step is repeated up to a
+number of tries set by {\em MAXHOPTRY}. If {\em FLIPNUCMC} is set,
+then at every Monte Carlo hop, the nucleosomes are flipped upside down
+relative to the fiber axis with a certain probability (this can extend
+the range of structures accessible in a short basin-hopping run).
+
+At the end of the basin hopping calculation, each structure in the
+database can be optionally minimized (if {\em DBMINIMIZE} is set) to a tolerance set by {\em
+  OPTOL}, and the resulting database can be re-sorted by energy if
+{\em DBSORT} is set. After this, information on the energy and helical
+coordinates for each structure in the database is printed out. Extra
+information is printed for each structure. if {\em PRINTENERGYPARTS, PRINTFIBERDIAM,
+  PRINTNUCDIST} keywords are turned on. Finally, the first {\em
+  NCONFIGDUMP} lowest-energy structures in the
+database are output to individual structure files with names set by
+{\em DUMPFILE}, and optionally (if {\em REPLICATESTRUCT} is set), each
+structure is replicated to a certain number of nucleosomes and dumped
+into a different file.
+
+\path=examples/param.ex.basinhop= is an example file for a basin
+hopping calculation
+
+\subsection{DATABASEPARSE action}
+Parse through a database file output during a previous basin-hopping
+run, print out information on the structures, and output individual
+structure files. Note that this can be used to look at the structures
+found by a basin-hopping run while that run is still going.
+
+The keywords specific to this action are: {\em NCONFIGSAVE, DATAFILE,
+  DBMINIMIZE, OPTOL, ENERGYRECALC, DBSORT, SAMECONF,
+  DBCONFIGMAXE, PRINTENERGYPARTS,
+  PRINTFIBERDIAM, PRINTNUCDIST, NCONFIGDUMP, DUMPFILE, REPLICATESTRUCT}
+
+Up to the first {\em NCONFIGSAVE} structures are read from a database
+file specified with {\em DATAFILE}. If {\em DBMINIMIZE} is turned on,
+the structures are each optimized to the a tolerance of {\em
+  OPTOL}. Alternately, if {\em ENERGYRECALC} is turned on, the energy
+for each structure in the database is recalculated using the current energetic
+parameters (see Sec.\ref{sec:energy}). Next, if {\em DBSORT} is turned
+on, the structures are sorted from lowest to highest energy, with any
+duplicates (as determined using {\em SAMECONF} parameters) removed
+from the database. Only structures with energy below {\em
+  DBCONFIGMAXE} are retained in the database. The new
+database of structures (if any minimization, sorting, or energy
+recalculation was done) is dumped into the second file specified with
+{\em DATAFILE}. Information about each structure is printed out, with
+additional printng specified by {\em PRINTENERGYPARTS,
+  PRINTFIBERDIAM, PRINTNUCDIST}. Each structure of the first {\em
+  NCONFIGDUMP} in the database is dumped out into {\em DUMPFILE}. Replicated structures are also dumped out if {\em
+  REPLICATESTRUCT} is set. Only structures with energy below {\em
+  DBCONFIGMAXE} are dumped out.
+
+\path=examples/param.ex.database= is an example file for a database
+parsing calculation
+
+\section{Calculation Details}
+\subsection{Representation of regular fiber structure}
+\label{sec:helrep}
+A regular helical fiber is fully defined by the position and
+orientation of the first two nucleosomes, and the path of the
+intervening linker. In this code, the fiber is represented by the
+following helical coordinates:
+\begin{itemize}
+\item height per nucleosome along fiber axis ($h$)
+\item angle per nucleosome around fiber axis ($\theta$)
+\item radius of fiber, from center axis to center of nucleosomes ($R$)
+\item three Euler angles ($\alpha, \beta, \gamma$) giving the
+  orientation of the first nucleosome relative to the fiber coordinate
+  system. The fiber coordinate system is defined with the fiber axis
+  along the z-axis and the initial nucleosome falling on the
+  x-axis. The Euler angles are in the $z-x-z$ convention (rotation by
+  angle $\alpha$ around z axis, rotation by angle $\beta$ around new x
+  axis, rotation by angle $\gamma$ around new z axis).  Thus, 
+  $\beta$ gives the angle between the nucleosome symmetry axis and the
+  fiber axis.
+\end{itemize}
+
+The linker DNA is represented as a discretized worm-like chain, with
+number of segments set by the {\em NSEGPERLINK} keyword. 
+The length of the linker is set with the {\em LINKLEN} keyword. 
+
+The geometry of the nucleosomes is specified by providing the
+position of the DNA at the entry and exit ({\em POSP, POSM}
+keywords), the tangent of the DNA ({\em BENDTANP, BENDTANM}), and the
+x-axis defining the coordinate system of the DNA at the points where
+it enters and exits the nucleosome ({\em XAXP, XAXM}). Note that the
+DNA coordinate system has the z-axis along the DNA tangent, with the
+plus end (exit) tangent pointing away from the nucleosome and the
+minus end (entrance) tangent pointing towards the nucleosome. All DNA
+entry/exit geometry information is given relative to the coordinate
+system of the nucleosome. Note that {\em POSP, POSM} are treated as
+the position of the center of the last bound basepair of DNA. That is,
+the actual linker DNA is attached on one side at point
+{\em POSP}$+${\em BENDTANP}$*\frac{bp}{2}$ relative to the first nucleosome and
+on the other side at point {\em POSM}$-${\em BENDTANM}$*\frac{bp}{2}$ relative to
+the second nucleosome. The length of a basepair ($bp$) is set with the
+{\em BPLEN} keyword.
+
+The {\em FILLBEAD} keyword can be used to specify the position and
+orientation of a ``filler bead'' of DNA attached to the
+nucleosome. These beads are used only for final output and
+visualization of the structure and are not involved in the actual
+calculations. Also for purposes of visualization, the length of DNA
+tails on either side of the fiber can be set with {\em NTAILSEG}.
+
+The nucleosome attachment geometry can also be specified as an
+idealized spiral using the {\em SPIRALBENDS} keyword, which will set
+all the other geometry parameters, and the filler beads, automatically.
+
+\subsection{Initial fiber configuration}
+\label{sec:startstruct}
+The relevant keywords for setting the original configuration of the
+fiber are: {\em STARTHELIX, RESTART, CHECKRESTART, RESTARTDUMP,
+  RANDSTART, STARTHELH, STARTHELT, STARTHELR, STARTHELA, STARTHELB, STARTHELG}
+
+By default, the fiber is set up in the regular helix corresponding to
+straight DNA linkers for the given nucleosome geometry and linker length.
+If {\em STARTHELIX} is set, the fiber is started from a given set
+of 6 helical parameters, with the linker DNA placed in a straight line
+between the attachment points once the nucleosomes are set. 
+
+If the {\em RESTART} keyword is used, the fiber is started from an
+output file containing the resulting structure from a previous
+calculation. This keyword has a switch that allows only nucleosome positions to be read in from the supplied file, or to interpolate linker segments along a piecewise linear path defined by the linker in the supplied file. The latter can be used to restart from a structure which had a different length or number of linker segments, while still maintaining the same path of the linker.
+
+
+If {\em CHECKRESTART} is turned on then a previous
+configuration will only be used if the specified file exists, and
+otherwise the starting structure setup will revert to defaults or {\em
+  STARTHELIX}. If {\em RESTARTDUMP} is set, then if the file specified
+with {\em DUMPFILE} exists, the fiber will be restarted from that
+file rather than the other specifications.
+
+
+The {\em RANDSTART} keyword causes the linker DNA beads to be
+perturbed slightly from their default positions in whatever starting
+structure is used. The {\em STARTHELH, STARTHELT, STARTHELR,
+  STARTHELA, STARTHELB, STARTHELG} keywords will overwrite specific
+helical parameters regardless of how the starting structure is generated.
+
+\subsection{Energy calculations}
+\label{sec:energy}
+\subsubsection{Elastic energies}
+
+The linker DNA is treated as a discretized worm-like chain, with
+harmonic potentials for bend, twist, and stretch. The bend modulus is
+set with the {\em LP} keyword, the twist modulus with {\em LT}, and
+the stretch modulus with {\em LSTRETCH}. The natural twist of the DNA
+is set with {\em TWIST}, and the natural length of the linker segments
+is calculated based on the linker length ({\em LINKLEN}) and the
+number of segments ({\em NSEGPERLINK}).
+
+\subsubsection{Steric energies}
+
+The cylindrical shape of the nucleosomes for purposes of steric
+exclusion is set with the {\em STERICSHAPE} keyword. The linker DNA
+segments are also treated as cylinders, with radius set by {\em
+  DNARAD}. The steric energies are quadratic in the overlap between
+cylinders, with the modulus set by {\em ESTERIC}. 
+
+The steric exclusion potential between nucleosome--nucleosome,
+linker--linker, or nucleosome--linker can be turned of with the {\em
+  NONUCSTERICS, NOSEGSTERICS, NONUCSEGSTERICS} keywords.
+
+The cylinder--cylinder overlap is calculated with the aid of tabulated
+minimal approach distances. The tabulations are saved in (or optionally,
+read from) binary files specified with {\em NUCCYLFILE, SEGCYLFILE, NUCSEGCYLFILE}. 
+
+Steric interactions are cut off for nucleosomes and linkers separated
+by more than {\em MAXBENDINTER} repeats.
+
+\section{DNA looping off single nucleosome}
+\label{sec:singlenuc}
+In addition to finding configurations of regular chromatin fibers,
+this code can also be used for optimizing DNA loops attached to a
+single nucleosome. More generally, it can be employed for finding
+minimum energy configurations of a discretized twisted worm-like chain
+with the end positions, tangents, and orientations constrained. 
+
+To model a DNA loop off a single nucleosome, fix all helical
+parameters, with the height per nucleosome ({\em STARTHELH}) and angle
+per nucleosome ({\em STARTHELT}) set to 0. {\em MAXBENDINTER} should
+be set to 0 so that no replicated nucleosomes are involved in the
+energy calculation. {\em NONUCSTERICS} should be turned on to
+ignore the steric overlap between two nucleosomes directly on top of
+each other. If running a basin-hopping calculation, {\em SEGHOPEVERY} should be set to 1 to ensure that each hop perturbs the free DNA segments rather than the nucleosome. Finally, {\em NTAILSEG} should be set to 0 to get rid of DNA
+tails on either end. 
+
+{\em POSP, BENDTANP, XAXP} are used to set the position, tangent, and
+x-axis for the DNA at one end of the loop and {\em POSM, BENDTANM,
+  XAXM} set the geometry at the other end of the loop. 
+
+The script \path=scripts/dnaloopFromPDB.py= can be used to set up end constraints for a loop
+held fixed between two bound basepairs on a nucleosome.
+
+The recommended set of options for visualizing the resulting
+structures is,
+\begin{verbatim}
+scripts/beadbranch2pdb.py <filename>  -orientnucz -connectmax 2 -nbp <bpperseg> -nr
+\end{verbatim}
+where \verb=filename= is the name of the output file to be visualized
+and \verb=<bpperseg>= is the number of basepairs per linker
+segment. This will result in a pdb file that has the nucleosome axis
+along the z axis, the first end of the free DNA loop along the x axis,
+and the nucleosome center at the coordinate origin.
+
+An example parameter file for basin-hopping with a loop on a single
+nucleosome is provided in \path=examples/param.ex.singlenuc=.
+% ---------------------------------------------------------
+
+\section{Keyword Index}
+\label{sec:keywords}
+The code will attempt to read parameters out of a file named \path=param.suffix= where ``suffix'' is the command line argument. If no command line arguments are supplied, it will look for a file named \path=param=. If multiple arguments are supplied, it will read multiple parameter files in sequence.
+
+The parameter file should have one keyword per line and must end with a blank line. All blank lines and all lines beginning with \# are ignored. For the most part, the order of the lines and the capitalization of the keywords does not matter. All keywords except {\em ACTION} are optional. The default values for each parameter are listed below. If a keyword is supplied, then values may or may not be needed as well. Again, the required and optional value types are listed below. 
+
+Keywords and multiple values are separated by spaces. 
+
+When reading the parameter file, lines longer than 500 characters will be truncated. To continue onto the next line, add ``+++'' at the end of the line to be continued.
+No individual keyword or  value should be longer than 100 characters.
+
+Floating point numbers can be formated as $1.0$, $1.1D0$, $10e-1$, $-1.0E+01$, etc., where the exponential notation specifier must be D or E (case insensitive). Integer numbers can also be specified in exponential notation without decimal points (eg: 1000 or 1E3). Logical values can be specified as T, F, TRUE, FALSE, 1, or 0 (with 1 corresponding to true and 0 to false).
+
+The length units used for the defaults are in nm and the energy units are in kT. 
+
+\begin{itemize}
+%
+\item {\it ACTION}
+  \begin{itemize}
+    \item  value: 1 string of at most 20 characters; no default
+    \item This keyword sets the overall calculation performed by the program (see Sec.\ref{sec:tasks})
+    \item Possible values are: GETSTRUCT, OPTIMIZE, BASINHOP, DATABASEPARSE
+  \end{itemize}
+%
+\item {\it BENDTANM}
+  \begin{itemize}
+    \item value: 3 floats; default 0D0 0D0 1D0
+    \item Specify the direction of the DNA as it comes off the bottom edge of the nucleosome. This is the minus end tangent (pointing inward towards the nucleosome), relative to the coordinate system of the nucleosome.
+    \item This keyword is overwritten by the SPIRALBENDS keyword
+  \end{itemize}
+%
+\item {\it BENDTANP}
+  \begin{itemize}
+    \item value: 3 floats; default 0D0 0D0 1D0
+    \item Specify the direction of the DNA as it comes off the top edge of the nucleosome. This is the plus end tangent (pointing outward from the nucleosome), relative to the coordinate system of the nucleosome.
+    \item This keyword is overwritten by the SPIRALBENDS keyword
+  \end{itemize}
+%
+\item {\it BHCHECKRANGE}
+  \begin{itemize}
+    \item value: 1 integer; default: 50
+    \item when running a basinhopping calculation, adjust the size of the Monte Carlo hops after the given number of steps. The hop size is adjusted to maintain a given fraction of accepted configurations ({\em BHFACC}), and a given fraction of hops that fall into the same local minimum basin ({\em BHFSAME})
+  \end{itemize}
+%
+\item {\it BHFACC}
+  \begin{itemize}
+    \item values: 1 float; default 0.5D0
+    \item When running a basin-hopping calculation, the hop size is dynamically adjusted to maintain the fraction of accepted structures within 0.1 of the value specified here.
+  \end{itemize}
+%
+\item {\it BHFSAME}
+  \begin{itemize}
+    \item values: 1 float; default 0.2D0
+    \item When running a basin-hopping calculation, the hop size is dynamically adjusted to maintain the fraction of new configurations that fall into the same local minimum basin as the configuration before the hop. This fraction is maintained within 0.1 of the value specified here.
+  \end{itemize}
+%
+\item {\it BHTEMP}
+  \begin{itemize}
+    \item values: 1 float; default 1D0
+    \item The effective temperature used in the basinhopping
+      calculation (as a multiple of standard temperature). Energies are scaled by this effective temperature when deciding whether to accept each new local minimum using a Metropolis Monte Carlo criterion.
+  \end{itemize}
+% 
+\item {\it BHTOL}
+  \begin{itemize}
+    \item values: 1 float; default 1D-4
+    \item When running a basin-hopping calculation, specifies how tightly (in rms force) to converge the gradient-based minimization after each hop. If further minimization of the best local minima found is desired at the end, use the {\em DBMINIMIZE} keyword with a tolerance specified by {\em OPTOL}.
+  \end{itemize}
+%
+\item {\it BPLEN}
+  \begin{itemize}
+    \item values: 1 float; default 0.34D0
+    \item Length of a basepair (default units of nm). This is used to offset the edges of the linker DNA by half a basepair from the nucleosome edges at each end, and also in setting the default number of filler beads when using {\em SPIRALBENDS}.
+  \end{itemize}
+%
+\item {\it CHECKRESTART}
+  \begin{itemize}
+    \item no values
+    \item When restarting from an output file ({\it RESTART} keyword), first check to see if the file exists. If the file does not exist, then create a new structure as if the RESTART keyword was not present (from helical parameters given by {\em STARTHELIX} or with the straight linker structure for the given nucleosome geometry and linker length). By default, if this keyword is not present and the file for restarting is not found, then the program crashes with an error.
+  \end{itemize}
+%
+\item {\it CYLINDERPTS}
+  \begin{itemize}
+    \item values: 3 integers; default: 50 50 50 
+    \item Number of points in each of 3 dimensions to use in tabulating closest approach distances for cylindrical nucleosomes. The first two dimensions are for the cosine of the angle between each nucleosome orientation and the vector between them. The last is for the dihedral angle between the nucleosomes.
+  \end{itemize}
+%
+\item {\it DATAFILE}
+  \begin{itemize}
+    \item value: 2 string up to 100 characters (DATAFILE, NEWDATAFILE); 2nd string is optional; default: *.data.out *.datanew.out
+    \item When running a DATABASEPARSE calculation or a BASINHOP calculation with {\em READDATAFILE} turned on, the DATAFILE string gives the name of the file containing the database of structures to be read in
+    \item The NEWDATAFILE string gives the name of the file into which the newly updated database of structures is saved during a BASINHOP calculation or after a DATABASEPARSE calculation if {\em DBSORT}, {\em DBMINIMIZE}, or {\em ENERGYRECALC} are turned on.
+    \item if the character * is present in the file names, then the last occurence of the * is replaced by the command-line suffix
+    \item DATAFILE and NEWDATAFILE may be the same for reading in and dumping out to the same database file
+  \end{itemize}
+%
+\item {\it DBCONFIGMAXE}
+  \begin{itemize}
+    \item 1 float; default: $\infty$
+    \item When building up a database (in the BASINHOP calculation or the DATABASEPARSE calculation with {\em DBSORT} turned on), do not include any configurations with energy above the give value.
+    \item This does not apply to reading in a database from file unless that database is then resorted with {\em DBSORT}
+  \end{itemize}
+%
+\item {\it DBMINIMIZE}
+  \begin{itemize}
+    \item no value;
+    \item When running a DATABASEPARSE calculation or a BASINHOP calculation minimize each of the structures in the final database to a tolerance specified by {\em OPTOL}
+    \item The structures are not re-sorted by energy after minimization unless the {\em DBSORT} keyword is specified
+  \end{itemize}
+%
+\item {\it DBSORT}
+  \begin{itemize}
+    \item no value;
+    \item When running a DATABASEPARSE calculation or a BASINHOP calculation, re-sort the final database from lowest to highest energy. This is done at the very end before outputting database information (after minimization of the structuresi f {\em DBMINIMIZE} is set.
+    \item If running a DATABASEPARSE calculation and {\em ENERGYRECALC} is not turned on, then the configurations are sorted by the energy saved in the database file as the energies are not recalculated.
+  \end{itemize}
+%
+%% \item {\it DISCOPOTENTIAL}
+%%   \begin{itemize}
+%%     \item 8 floats, all optional; defaults: ----
+%%     \item parameters for the DiSCO internucleosomal potential
+%%     \item NOT SET UP YET. DO NOT USE
+%%     \item This keyword also turns on the DisCo potential in the first place
+%%   \end{itemize}
+%% %
+%% \item {\it DISCOCHARGE}
+%%   \begin{itemize}
+%%     \item 4 floats; no default
+%%     \item Position ( 3 coordinates, relative to the nucleosome coordinate system) and magnitude of a charge on a nucleosome
+%%     \item Use for the DiSCO internucleosomal potential
+%%     \item Can also be used to mark individual positions on nucleosomes for output (the specified positions will be output as CH atoms on the final pdb)
+%%   \end{itemize}
+%% %
+%% \item {\it DISCORAMP}
+%%   \begin{itemize}
+%%     \item 1 float (DISCORANGE), 1 integer (NOPTRUN), 1 float (INTERMOPTOL), all optional; defaults: 10D0, 1, 1D-4
+%%     \item When doing an OPTIMIZE calculation with the DiSCO potential, run successive optimization runs (NOPTRUN of them) while slowly ramping up the strength of the DisCO potential from 10\^-DISCORANGE to 1.
+%%   \end{itemize}
+%
+\item {\it DNARAD}
+  \begin{itemize}
+    \item value: 1 float; default: 1D0
+    \item the steric radius of a DNA bead. Used as the cylinder radius in DNA-nucleosome and DNA-DNA steric interactions.
+  \end{itemize}
+%
+\item {\it DUMPCURRENT}  
+  \begin{itemize}
+  \item value: 2 integers (DUMPSTEPS,DUMPNBEND), both optional; default 100 2
+  \item Turns on periodic dumping of structures when running an OPTIMIZE calculation. The structures are dumped after every DUMPSTEPS steps, into the file specified by the {\it DUMPFILE} keyword.
+  \item prior to dumping, the regular helical structures are replicated to have DUMPNBEND nucleosomes (DUMPNBEND must be at least 2)
+  \end{itemize}
+%
+\item {\it DUMPFILE}
+  \begin{itemize}
+    \item value: 1 string up to 100 characters; default: *.dump.out     
+    \item When running an OPTIMIZE calculation with the {\em DUMPCURRENT} keyword turned on, this gives the filename for dumping structures periodically if the. The last instance of ``\#'' in the specified file name is replaced by the number corresponding to the current optimization step (as a 6-digit integer). 
+    \item When running a DATABASEPARSE calculation or at the end of a BASINHOP calculation, this is the file name for dumping each configuration in the database (without replication of the regular helix). The last instance of ``\#'' in the file name is replaced by the index of the configuration in the database
+    \item if DUMPFILE contains the character *, the last instance is replaced with the command line suffix    
+  \end{itemize}
+%
+\item {\it ENERGYRECALC}  
+  \begin{itemize}
+  \item no values
+  \item When running a DATABASEPARSE calculation, recalculate the energy of each configuration according to the specifications in the current parameter file (instead of just using the energy already saved in the database). The keyword {\em DBSORT} can be used to re-sort the database according to these new energies. The final database will be output anew to the NEWDATAFILE filename specified with the {\em DATAFILE} keyword.
+  \item This keyword is unnecessary if {\em DBMINIMIZE} is turned on
+  \end{itemize}
+% 
+\item {\it ESTERIC}  
+  \begin{itemize}
+  \item 1 float; default: 1D3
+  \item Strength of steric interaction energies (nucleosome-nucleosome, nucleosome-linker, linker-linker). This is the multiplier for the harmonic function in the steric overlap.
+  \end{itemize}
+%
+\item {\it EXTRAPARAMFILES}
+  \begin{itemize}
+  \item 1 to 10 strings of up to 100 characters; no default
+  \item in addition to the current parameter file(s) (supplied as a command-line argument(s)), also read information from all the specified parameter files.
+  \item The last instance of ``*'' in each extra parameter file is replaced by the command-line argument
+  \item The additional parameter files have the same format as the original parameter file and can include any of the keywords described in this section. This keyword allows multiple parameter files to access the same information from a single file.
+  \item Files specified by this keyword will be read after those specified on the command line and may overwrite the parameters
+  \end{itemize}
+%
+\item {\it FILLBEAD}
+  \begin{itemize}
+    \item value: 6 floats; no default
+    \item Specifies a single filler bead to be used when outputting configurations. The 6 values are the position of the bead and the position of its branch, relative to the center and orientation of the bend. The branch is along the x-axis of the coordinate system associated with the DNA at that point.
+    \item at most 1000 such beads can be specified
+    \item {\bf WARNING}:  do not use together with the {\it SPIRALBENDS} keyword
+  \end{itemize}
+%
+\item {\it FIXDIAMETER}
+  \begin{itemize}
+    \item value: 1 float; no default
+    \item Fix the full diameter of the chain to the given value. The full diameter stretches across the regular helix between the outermost points of the nucleosomes (as approximated using cylindrical nucleosomes). It thus depends on the steric shape of the nucleosomes as well as the helix parameters. The diameter is fixed throughout the calculation by treating the helix radius as a dependent function of the other 5 regular helix coordinates.
+  \end{itemize}
+%
+\item {\it FIXHELIXPARAM}
+  \begin{itemize}
+    \item value: list of integers between 1 and 6 (inclusive); default: turned off
+    \item When running an OPTIMIZE or BASINHOP calculation, fix the listed regular helix coordinates and do not allow them to vary
+    \item The 6 coordinates, in order, are: height per nucleosome along the fiber axis, angle per nucleosome around helix axis, radius, and the three euler angles that define the orientation of the nucleosome relative to the helix axis. For the euler angles: the helix axis is the z-axis, the vector from the axis to the nucleosome is the x axis; roughly, beta gives the tilt of the nucleosome relative to the helix axis, alpha tells in what direction it is tilted, and gamma is the nucleosome's rotation around it's own symmetry axis
+  \end{itemize}
+%
+\item {\it FLIPNUCMC}
+  \begin{itemize}
+    \item value: 1 optional float; default: turned off, value 0.5D0
+    \item For a BASINHOP calculation, turn on random flipping upside down of the nucleosomes during the Monte Carlo hops. The supplied value gives the probability of flipping the nucleosomes at each hop. 
+  \end{itemize}
+%
+%% \item {\it LANGOWSKI}
+%%   \begin{itemize}
+%%     \item value: 4 optional floats (all or none must be supplied); default: 10.3 0.25 -0.506 0.383
+%%     \item Turns on the modified Gay-Berne anisotropic LJ potential described in \cite{Wedemann04}. The potential is between the first bend and all subsequent bends out to {\it MAXBENDINTER}
+%%     \item the four parameters are: $\sigma_0, \epsilon_0, \chi, \chi '$
+%%   \end{itemize}
+%
+\item {\it LINKLEN}
+  \begin{itemize}
+    \item value: 1 optional float; default: 17D0
+    \item Linker length for the chromatin fiber (in nm by default)
+  \end{itemize}
+%
+\item {\it LP}
+  \begin{itemize}
+    \item value: 1 optional float; default: 50D0
+    \item Bending persistence length of DNA (in nm by default)
+  \end{itemize}
+%
+\item {\it LSTRETCH}
+  \begin{itemize}
+    \item value: 1 float; default: 268.2927D0
+    \item the stretch persistence length of DNA (magnitude of the harmonic potential for stretching the bead-to-bead distance)
+  \end{itemize}
+%
+\item {\it LTW}
+  \begin{itemize}
+    \item value: 1 float; default: 110D0
+    \item the twist persistence length of the DNA (in nm by default)
+  \end{itemize}
+%
+\item {\it MARKPOINT}
+  \begin{itemize}
+    \item value: 1 string up to 3 characters, 3 floats (no defaults)
+    \item Create a marked point on the nucleosome. These points are not involved in the calculation, but are marked on each nucleosome in the output file. Can be used to visualize the nucleosome axes in PyMOL, or to see location of points of interest.
+    \item First string gives the point name, which will correspond to the atom name in the final pdb file created by the beadbranch2pdb.py script. String is truncated above 3 characters. The following names should not be used to avoid clashing with the DNA and nucleosome atoms in the final pdb file: A1, A2,A3, F1,F2,F3,AC,AC1,AC2,FT,CH
+    \item Floats are x,y,z coordinates of the marked point in the coordinate system of the nucleosome.
+  \end{itemize}
+%
+\item {\it MAXBENDINTER}
+  \begin{itemize}
+    \item value: 1 integer; default: 20
+    \item When calculating internucleosome interactions (sterics or the Gay-Berne or DiSCO potential), only calculate interactions between the 0th nucleosome (and its associated linker) and subsequent nucleosomes up to the MAXBENDINTER nucleosome with its associated linker.
+  \end{itemize}
+%
+\item {\it MAXDCR}
+  \begin{itemize}
+    \item value: 1 integer; default: 10
+    \item For the OPTIMIZE calculation. If the step along the search direction increases the energy by more than {\em MAXEJUMP}, then the step size will be decreased by a factor {\em STEPDCR}. However, if {\em MAXDCR} decreases are done and a lower energy still hasn't been found, the Hermitian matrix estimate will be reset and steps will be attempted in the opposite direction
+  \end{itemize}
+%
+\item {\it MAXEJUMP}
+  \begin{itemize}
+    \item value: 1 float; default: 1D-9
+    \item The maximum allowed increase in energy when selecting the step size for optimization
+  \end{itemize}
+%
+\item {\it MAXHOPTRY}
+  \begin{itemize}
+    \item value: 1 integer; default: 10
+    \item For the BASINHOP calculation, the maximum number of attempts allowed for each hop which result in the configuration failing to minimize. After the given number of attempts, the program will give up and exit with an error.
+  \end{itemize}
+%
+\item {\it MAXOPTATTEMPT}
+  \begin{itemize}
+    \item value: 1 integer; default: 10
+    \item Occasionally, the BFGS optimization of the structure will
+      fail. This is most often due to the structure hitting gimbal
+      lock (when one of the linker segments points directly along the
+      negative z axis), two linker beads approaching too close to one
+      another, or a 180$^\circ$ angle forming between two consecutive
+      linker segments. These problems usually arise only when working
+      with DNA loops on a single nucleosomes or when the initial
+      structure has enormous steric clashes. 
+    \item When this occurs, the code attempts to restart the
+      optimization, resetting the Hessian approximation. For the
+      single nucleosome case, the entire structure is rotated for each
+      attempt. 
+    \item This keyword sets the maximum number of optimization
+        restarts before the entire optimization is declared a failure.
+  \end{itemize}
+%
+\item {\it MAXOPTSTEP}
+  \begin{itemize}
+    \item value: 1 integer; default: 10000
+    \item The maximum number of steps to take in an optimization calculation, before giving up and exiting unsuccessfully
+  \end{itemize}
+%
+\item {\it MAXSTEPSIZE}
+  \begin{itemize}
+    \item value: 1 float; default: 1D0
+    \item The maximum allowed step size during an optimization calculation
+  \end{itemize}
+%
+\item {\it MCSTARTRANGE}
+  \begin{itemize}
+    \item value: 3 floats, last 2 optional; default: 1D0, 2$\pi$, 2D0
+    \item For a BASINHOP calculation, the initial ranges used in taking the Monte Carlo hops. The first range is used for moving linker beads, helix height, and radius. The second is used for randomly generating an angle by which to rotate the nucleosomes and linker segment orientations. The last is used for generating the axis around which the nucleosomes are rotated.
+  \end{itemize}
+%
+\item {\it NBASINHOP}
+  \begin{itemize}
+    \item value: 1 integer; default: 100
+    \item For a BASINHOP calculation, the number of Monte Carlo hops to carry out
+  \end{itemize}
+%
+\item {\it NCONFIGSAVE}
+  \begin{itemize}
+    \item value: 1 integer; default: 1000
+    \item For a BASINHOP or DATABASEPARSE calculation, maximum size of the database and thus the maximum number of configurations to save and output information about. 
+  \end{itemize}
+%
+\item {\it NCONFIGDUMP}
+  \begin{itemize}
+    \item value: 1 integer; default: 1
+    \item For a BASINHOP or DATABASEPARSE calculation, maximum number of configurations to output as individual structure files. No configurations with energy above 
+  \end{itemize}
+%
+\item {\it NONUCSTERICS}
+  \begin{itemize}
+    \item no values
+    \item Turn off nucleosome-nucleosome steric interactions 
+  \end{itemize}
+%
+\item {\it NONUCSEGSTERICS}
+  \begin{itemize}
+    \item no values
+    \item Turn off nucleosome - linker segment steric interactions
+  \end{itemize}
+%
+\item {\it NOSEGSTERICS}
+  \begin{itemize}
+    \item no values
+    \item Turn off linker segment - linker segment steric interactions
+  \end{itemize}
+%
+\item {\it NSEGPERLINK}
+  \begin{itemize}
+    \item 1 integer; default: {\em LINKLEN}/{\em BPLEN}
+    \item Number of segments in each discretized DNA linker
+    \item Default gives segments corresponding to a (approximately) single basepair of DNA
+  \end{itemize}
+%
+\item {\it NTAILSEG}
+  \begin{itemize}
+    \item 2 integers, second optional; default: 0 0 
+    \item Number of segments in the tails at each end of the fiber structure; used for output only
+    \item If only the first tail length is give, the other tail is assumed to be of the same length
+  \end{itemize}
+%
+\item {\it NUCCYLFILE}
+  \begin{itemize}
+    \item 1 string up to 100 characters, 1 optional logical; defaults: cylinder?.bin 1
+    \item File in which to store and possibly retrive the cylindrical sterics tabulation for nucleosome -- nucleosome interactions
+    \item If present, the last instance of ``*'' in the file name is replaced with the command line argument
+    \item If present, the last instance of ``?''  in the file name is replaced with a string ``R\#H\#R\#H\#'' where the \# are the radius and height for the two cylinders whose interactions are being tabulated, rounded to 2 decimal places
+    \item The logical input is a switch for whether or not to attempt to read in from file. If it is TRUE, attempt to read in the tabulated data from the given file (if the file exists); otherwise, recalculate the tabulation and output into the file with the given name
+      \item If reading tabulated data from file and the tabulated values correspond to cylinders of a different size than the ones currently used, the program print a warning, recalculate the cylinder data and save the new data in file new-filename.bin where filename is the value supplied in the parameter file.
+  \end{itemize}
+%
+\item {\it NUCSEGCYLFILE}
+  \begin{itemize}
+  \item 1 string up to 100 characters, 1 optional logical; defaults: cylinder?.bin 1
+  \item File in which to store (and possibly retrive) the cylindrical sterics tabulation for nucleosome -- linker segment interactions
+  \item If present, the last instance of ``*'' in the file name is replaced with the command line argument
+  \item If present, the last instance of ``?''  in the file name is replaced with a string ``R\#H\#R\#H\#'' where the \# are the radius and height for the two cylinders whose interactions are being tabulated, rounded to 2 decimal places
+  \item The integer is a switch for whether or not to attempt to read in from file. If it is TRUE, attempt to read in the tabulated data from the given file (if the file exists); otherwise, recalculate the tabulation and output into the file with the given name
+  \item If reading tabulated data from file and the tabulated values correspond to cylinders of a different size than the ones currently used, the program print a warning, recalculate the cylinder data and save the new data in file \path=new-filename.bin= where filename is the value supplied in the parameter file. Note that the size of the linker segment cylinders depends on the {\em LINKLEN} and {\em NSEGPERLINK} parameters
+  \end{itemize}
+%
+%% \item {\it OPTFLEXTAILSONLY}
+%%   \begin{itemize}
+%%     \item no values
+%%     \item When using the DiSCO internucleosomal potential, only calculate the energy components corresponding to the flexible nucleosome tails and only optimize the positions of these tails.
+%%   \end{itemize}
+%
+\item {\it OPTPRINTFREQ}
+  \begin{itemize}
+    \item value: 1 integer; default: 10
+    \item when running a optimization, print the current energy and RMS force every so many steps   
+  \end{itemize}
+%
+\item {\it OPTOL}
+  \begin{itemize}
+    \item value: 1 float; default: 1D-4
+    \item the convergence tolerance for an OPTIMIZE calculation. The optimization stops when the RMS force reaches this value. 
+    \item this is also the convergence tolerance used with {\em DBMINIMIZE} for a DATABASEPARSE calculation
+    \item If running a basinhopping calculation then the optimization tolerance is set instead by {\it BHTOL} except for any final minimization with {\it DBMINIMIZE}.
+  \end{itemize}
+%
+\item {\it OUTFILE}
+  \begin{itemize}
+    \item value: string up to 100 characters; default: *.out
+    \item When running a GETSTRUCT or OPTIMIZE calculation, this is the file into which the final configuration is output (without replicating the regular factor)
+    \item When running a BASINHOP calculation, the best configuration found so far is output into this file throughout the calculation
+    \item If the string provided has a * in it, then the last * in the string is replaced with the command-line argument used when running the program.    
+  \end{itemize}
+%
+\item {\it POSM}
+  \begin{itemize}
+    \item value: 3 floats; default: 0,1D0,-1D0
+    \item the position of the minus end of the DNA coming off the nucleosome, relative to the nucleosome center, using the nucleosome coordinate system
+    \item This keyword is not used if {\em SPIRALBENDS} is set
+  \end{itemize}
+%
+\item {\it POSP}
+  \begin{itemize}
+    \item value: 3 floats; default: 0,1D0,-1D0
+    \item the position of the plus end of the DNA coming off the nucleosome, relative to the nucleosome center, using the nucleosome coordinate system
+    \item This keyword is not used if {\em SPIRALBENDS} is set
+  \end{itemize}
+%
+\item {\it PRINTFIBERDIAM}
+  \begin{itemize}
+    \item no values
+    \item At the end of the calculation, print out the overall diameter of the fiber (stretching out to the furthest point of the nucleosomes). This depends on the cylindrical shape of the nucleosomes.
+    \item If running a BASINHOP or DATABASEPARSE calculation, the diameter of each structure in the database is printed out.
+  \end{itemize}
+%
+\item {\it PRINTNUCDIST}
+  \begin{itemize}
+    \item no values
+    \item At the end of the calculation, print out the distances between the cylindrical shells of the first nucleosome and of each subsequent nucleosome. This depends on the cylindrical shape of the nucleosomes.
+    \item If running a BASINHOP or DATABASEPARSE calculation, the distances for each structure in the database are printed out.
+  \end{itemize}
+%
+\item {\it PRINTENERGYPARTS}
+  \begin{itemize}
+    \item no values
+    \item At the end of a GETSTRUCT or OPTIMIZE calculation, print out the individual energy components for the chain structure. When running a BASINHOP or DATABASEPARSE calculation, the energy components are printed out for each individual structure in the final database.
+    \item The energy components (if not using DiSCO or Gay-Berne potentials) are, in order: (1) elastic bend energy, (2) twist energy, (3) stretch energy, (4) steric overlap energy between nucleosomes, (5) steric overlap energy between linker segments, (6) steric overlap energy between nucleosomes and linker segments. 
+  \end{itemize}
+%
+\item {\it RANDSTART}
+  \begin{itemize}
+    \item 1 float; default: 1D-4
+    \item When initializing the structure, randomize the position and orientation of the DNA linker beads by an amount equal to the specified value.
+    \item If this keyword is not set, then the linker is just placed as a straight linke from the plus end of one nucleosome to the minus end of the other
+  \end{itemize}
+%
+\item {\it READDATAFILE}
+  \begin{itemize}
+    \item no value
+    \item When running a BASINHOP calculation, begin by reading in a database of structures from the file specified by {\em DATAFILE} (if it exists). All subsequently found configurations are added on to this database. If the file does not exist, the calculation starts from scratch.
+  \end{itemize}
+%
+\item {\it REPLICATESTRUCT}
+  \begin{itemize}
+    \item values: integer (NBENDREPLIC), optional string (REPLICFILE); default string: *.replic.out
+    \item at the very end of the calculations, replicate the regular fiber structure to have NBENDREPLIC nucleosomes and output the result in the file REPLICFILE
+    \item The last instance of ``*'' in REPLICFILE is replaced by the command line argument
+    \item If running a BASINHOP or DATABASEPARSE calculation, each structure in the final database is replicated and output into REPLICFILE, where the last instance of ``\#'' in REPLICFILE is replaced by the index of the structure in the database.
+  \end{itemize}
+%
+\item {\it RESTART}
+  \begin{itemize}
+    \item value: 1 string up to 100 characters, 1 optional integer; default: *.out 2
+    \item Start the calculation using an output file from a previous run of the program. If the filename contains a *, the last instance of the * is replaced by the command line argument. 
+    \item The regular helix parameters of the structure read in from the restart file can be individually overwritten with the {\em STARTHELH, STARTHELT, STARTHELR, STARTHELA, STARTHELB, STARTHELG} keywords.
+    \item If {\em CHECKRESTART} is turned on then only restart from file if the file exists, otherwise start as normal. If {\em CHECKRESTART} is not turned on, then the program crashes with an error if the file does not exist.
+     \item the optional integer is a switch: if it is equal to 0, then only the bend positions and orientations are read from the output file, and the beads are filled in between bends in a straight-line fashion. If it is equal to 1 then the bead positions are used to define a piecewise linear curve and beads are placed equidistant along that curve. If it is 2, the entire chain configuration (including bead positions) is obtained from the output file.
+     \item If the switch is 2, then the number of linker segments must equal what it was in the restart file.
+    \item {\bf Warning}: if obtaining bead positions from the output file (switch=1 or 2), the nucleosome geometry needs to be identical to that used in generating the output file to begin with. Otherwise, there may be strange behavior with no error messages.
+  \end{itemize}
+%
+\item {\it RESTARTDUMP}
+  \begin{itemize}
+    \item no values
+    \item Restart from the file specified by {\em DUMPFILE} if it is present. Otherwise start as normal (either from {\em RESTART} or {\em STARTHELIX} or with a straight-linker structure. This is useful for restarting an OPTIMIZE calculation after a crash.
+    \item Note: the last instance of ``*'' in {\em DUMPFILE} is replaced by the command line argument, but any instance of ``\#'' is not replaced for restarting purposes
+  \end{itemize}
+%
+\item {\it RNGSEED}
+  \begin{itemize}
+    \item value: 1 integer; default: 0
+    \item Seed for the random number generator. 
+    \item If the value is 0 then the generator is seeded off the time, and the results will be different on each run (unless the runs are started within a millisecond of each other)
+    \item If the value is -1 then the seed is based on the last 5 characters in the command line argument (not counting SPACE,various parentheses,'',`). A unique seed is produced for all possible sets of 5 characters. 
+    \item If the value is -2 then the seed is based on the last 4 characters of the command line argument, and the millisecond time
+    \item Otherwise, the integer gives the random generator seed to use and the run should be repeatable with the exact same results
+    \item The random number generator is only used for a BASINHOP calculation, or if {\em RANDSTART} is set.
+  \end{itemize}
+%
+\item {\it SAMECONF}
+  \begin{itemize}
+    \item value: 2 floats (SAMEECUT, SAMEDISTCUT); default 0.5D0 1D0
+    \item when building up a database of distinct low-energy structures (for a BASINHOP calculation or with {\em DBSORT}), these parameters define what it means for structures to be considered the same
+    \item 2 structures are the same if their energy is within SAMEECUT of each other and the distance between the centers of the second nucleosomes relative to the first is within SAMEDISTCUT*{\em LP} and the angle necessary to rotate the orientation of the first nucleosome from one structure to the other is within SAMEDISTCUT and the individual linker beads are within SAMEDISTCUT*{\em LP} in the two structures.
+  \end{itemize}
+%
+\item {\it SEGCYLFILE}
+  \begin{itemize}
+    \item 1 string up to 100 characters, 1 optional logical; defaults: cylinder?.bin 1
+    \item File in which to store (and possibly retrive) the cylindrical sterics tabulation for linker segment -- linker segment interactions
+    \item If present, the last instance of ``*'' in the file name is replaced with the command line argument
+    \item If present, the last instance of ``?''  in the file name is replaced with a string ``R\#H\#R\#H\#'' where the \# are the radius and height for the two cylinders whose interactions are being tabulated, rounded to 2 decimal places
+    \item The logical value is a switch for whether or not to attempt to read in from file. If it is TRUE, attempt to read in the tabulated data from the given file (if the file exists); otherwise, recalculate the tabulation and output into the file with the given name
+    \item If reading tabulated data from file and the tabulated values correspond to cylinders of a different size than the ones currently used, the program print a warning, recalculate the cylinder data and save the new data in file \path=new-filename.bin= where filename is the value supplied in the parameter file. Note that the size of the linker segment cylinders depends on the {\em LINKLEN} and {\em NSEGPERLINK} parameters
+  \end{itemize}
+%
+\item {\it SEGHOPEVERY}
+  \begin{itemize}
+  \item 1 integer; default: -1
+  \item When running a BASINHOP calculation, how often to take a Monte Carlo hop that moves the linker segments only rather than the nucleosome positions
+  \item if the given value is less than 0, all hops move the nucleosomes
+  \item if the given value is 1, all hops move the linker segments only
+  \item Otherwise, move the linker segments every so many hops.
+  \end{itemize}
+%
+\item {\it SPIRALBENDS}
+  \begin{itemize}
+  \item 1 float (SPLEN), 1 integer(FILLINBEADS), 4 floats (SPRADIUS, SPHEIGHT, SPTWIST, SPTWIST0), all optional; default: 49.64D0, *$^1$, 4.18D0, 2.39D0, *$^2$, 0D0
+  \item Set up the geometry of the nucleosomes as an idealized spiral
+  \item SPLEN is the length of DNA bound on the nucleosome (in nm, by default)
+  \item FILLINBEADS is the number of filler beads bound on the nucleosome. (*$^1$) By default, this is set to SPLEN/{\em BPLEN}+1 (i.e, 147 for the default length bound)
+  \item SPRADIUS is the radius of the spiral, out to the center of the DNA helix (in nm, by default)
+  \item SPHEIGHT is the height per turn of the spiral (in nm by default)
+  \item SPTWIST is the twist of the DNA bound on the nucleosome. (*$^2$) By default this is set to be the same as the natural twist of the linker DNA (as set by the {\em TWIST} keyword)
+  \item SPTWIST0 sets the phase of the DNA twist; this should not matter except for visualizing the output
+  \item This keyword overwrites any other nucleosome geometry specifications, specifically those given by {\em POSP, POSM, BENDTANP, BENDTANM, XAXM, XAXP}.
+  \item {\bf WARNING}: do not use together with the {\em FILLBEAD} keyword
+  \end{itemize}
+%
+\item {\it SPIRALHAND}
+  \begin{itemize}
+  \item 1 integer ( 1 or -1 ); default: -1
+  \item When using idealized spiral for the nucleosome geometry (with {\em SPIRALBENDS} keyword), this sets the handedness of the spiral.
+  \item 1 is a right-handed spiral; -1 is a left-handed spiral
+  \end{itemize}
+%
+\item {\it STARTHELIX}
+  \begin{itemize}
+    \item value: 6 floats, no default
+    \item start the chain from a regular helical conformation with the specified parameters
+    \item the 6 values are, in order: height per nucleosome along fiber axis, angle per nucleosome around fiber axis, radius of fiber, then 3 euler angles giving the orientation of each nucleosome relative to the fiber coordinate system (where the z axis is the fiber axis and the x axis goes from the center of the fiber to the center of each nucleosome)
+    \item Values from this keyword is overriden by values from the following keywords: {\em RESTART, RESTARTDUMP, STARTHELH, STARTHELT, STARTHELR, STARTHELA, STARTHELB, STARTHELG}
+    \item If none of the keywords {\em STARTHELIX, RESTART, RESTARTDUMP} are provided, the default initial conformation is the one with straight linkers for the given nucleosome geometry and linker length.
+  \end{itemize}
+%
+\item {\it STARTHELA}
+  \begin{itemize}
+    \item value: 1 float; default: no default
+    \item set the $\alpha$ Euler angle for the nucleosome relative to the fiber axis in the initial regular helix structure
+    \item If {\it RESTART} is used, then the regular helix coordinates are obtained from an output file and then this particular coordinate is overwritten with the given value. This keyword also overwrites the corresponding value set by {\em STARTHELIX}.
+  \end{itemize}
+%
+\item {\it STARTHELB}
+  \begin{itemize}
+    \item value: 1 float; default: no default
+    \item set the $\beta$ Euler angle for the nucleosome relative to the fiber axis in the initial regular helix structure
+    \item If {\it RESTART} is used, then the regular helix coordinates are obtained from an output file and then this particular coordinate is overwritten with the given value. This keyword also overwrites the corresponding value set by {\em STARTHELIX}.
+  \end{itemize}
+%
+\item {\it STARTHELG}
+  \begin{itemize}
+    \item value: 1 float; default: no default
+    \item set the $\gamma$ Euler angle for the nucleosome relative to the fiber axis in the initial regular helix structure
+    \item If {\it RESTART} is used, then the regular helix coordinates are obtained from an output file and then this particular coordinate is overwritten with the given value. This keyword also overwrites the corresponding value set by {\em STARTHELIX}.
+  \end{itemize}
+%
+\item {\it STARTHELH}
+  \begin{itemize}
+    \item value: 1 float; default: no default
+    \item set the starting height per nucleosome for regular helix coordinates. 
+    \item If {\it RESTART} is used, then the regular helix coordinates are obtained from an output file and then this particular coordinate is overwritten with the given value. This keyword also overwrites the corresponding value set by {\em STARTHELIX}.
+  \end{itemize}
+%
+\item {\it STARTHELR}
+  \begin{itemize}
+    \item value: 1 float; default: no default
+    \item set the starting fiber radius for regular helix coordinates. 
+    \item If {\it RESTART} is used, then the regular helix coordinates are obtained from an output file and then this particular coordinate is overwritten with the given value. This keyword also overwrites the corresponding value set by {\em STARTHELIX}.
+  \end{itemize}
+%
+\item {\it STARTHELT}
+  \begin{itemize}
+    \item value: 1 float; default: no default
+    \item set the starting angle per nucleosome around the fiber axis for regular helix coordinates.
+    \item If {\it RESTART} is used, then the regular helix coordinates are obtained from an output file and then this particular coordinate is overwritten with the given value. This keyword also overwrites the corresponding value set by {\em STARTHELIX}.
+  \end{itemize}
+%
+\item {\it STEPDCR}
+  \begin{itemize}
+    \item value: 1 float; default: 0.1D0
+    \item For the gradient-based optimization, when trying to pick a step size, if the energy increases by more than {\em MAXEJUMP} then the step size is decreased by factor {\em STEPCRD}, up to {\em MAXDCR} times.
+  \end{itemize}
+%
+\item {\it STERICSHAPE}
+  \begin{itemize}
+    \item value: 2 floats, second one optional; defaults: 5.2D0 5.5D0      
+    \item This specifies the size of the cylindrical nucleosomes to use for steric exclusion calcualtions. First value is the radius of the cylinder; second value is its height (in nm, by default)
+  \end{itemize}
+%
+%% \item {\it TAIL}
+%%   \begin{itemize}
+%%     \item use for setting up flexible tails for the DiSCO potential. NOT SET UP YET.
+%%   \end{itemize}
+%% %
+%% \item {\it TAILBEAD}
+%%   \begin{itemize}
+%%     \item use for setting up flexible tails for the DiSCO potential. NOT SET UP YET.
+%%   \end{itemize}
+%
+\item {\it TENSION}
+  \begin{itemize}
+    \item value: 1 value; default: 0
+    \item External tension applied to the chain. Positive tension stretches the fiber and negative tension compresses it. Default units: kT/nm (per nucleosome)
+  \end{itemize}
+%
+\item {\it TWIST}
+  \begin{itemize}
+    \item value: 1 float; default: 1.7667
+    \item the twist density of the DNA in units of per length (default length units are nm)
+  \end{itemize}
+%
+\item {\it VERBOSE}
+  \begin{itemize}
+    \item no values
+    \item Turn on extra output for optimization calculations
+  \end{itemize}
+%
+\item {\it XAXM}
+  \begin{itemize}
+    \item value: 3 floats; default: 1,0D0,0D0
+    \item The position of the x-axis of the DNA coordinate system at the minus end of the nucleosome (relative to the nucleosome coordinate system). Note that the center of the minus end DNA coordinate system is set by {\em POSM}, while the z-axis of this coordinate system is set by {\em BENDTANM}
+    \item This vector will be normalized and orthogonalized to {\em BENDTANM} before being used
+  \end{itemize}
+%
+\item {\it XAXP}
+  \begin{itemize}
+    \item value: 3 floats; default: 1,0D0,0D0
+    \item The position of the x-axis of the DNA coordinate system at the plus end of the nucleosome (relative to the nucleosome coordinate system). Note that the center of the plus end DNA coordinate system is set by {\em POSP}, while the z-axis of this coordinate system is set by {\em BENDTANP}
+    \item This vector will be normalized and orthogonalized to {\em BENDTANP} before being used
+  \end{itemize}
+% --------------------------
+
+\end{itemize}
+
+\bibliographystyle{aip} 
+\bibliography{fiberModel}
+
+\end{document}

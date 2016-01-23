@@ -1,0 +1,132 @@
+# ---------------------------
+# Example parameter file for finding minimum energy structure for a
+# 50bp DNA loop off a single nucleosomes
+# Uses basin-hopping to look through different local minima
+#
+# To run: ../fibermodel.exe ex.singlenuc
+# To convert best fiber structure to pdb (2 bp per segment):
+# ../scripts/beadbranch2pdb.py ex.singlenuc.1.dump.out -nbp 2 -nr -orientnucz -connectmax 2
+# Visualize structure ex.singlenuc.1.dump.pdb in PyMOL
+# with @scripts/viewsinglenuc.pml
+# ---------------------------
+# Run basinhopping calculation
+ACTION basinhop
+
+# Seed random generator based on the current time
+RNGSEED 0
+
+# Run 10 Monte Carlo hops
+NBASINHOP 10
+# Tolerance for mean square force on each local minimization
+BHTOL 1D-4
+# Every hop should perturb the DNA segments only, not the nucleosome
+SEGHOPEVERY 1
+
+# Keep track of the 10 lowest-energy configurations
+NCONFIGSAVE 10
+# at the end, dump out the 5 lowest energy configurations
+NCONFIGDUMP 5
+
+
+# Output resulting database in ex.singlenuc.data.out
+DATAFILE *.data.out *.data.out
+# if datafile already present, read in the configurations
+# and proceed where the previous calculation left off
+READDATAFILE
+# Best configurations will be dumped into ex.singlenuc.1.dump.out, etc
+DUMPFILE *.#.dump.out
+
+# Length of loop is 17 nm
+LINKLEN 17D0
+# Loop is broken into 25 straight segments
+NSEGPERLINK 25
+
+# do not include any tail DNA segments in output
+NTAILSEG 0
+# turn off all steric interactions
+NONUCSTERICS
+NOSEGSTERICS
+NONUCSEGSTERICS
+# no interaction with other nucleosomes
+MAXBENDINTER 0
+
+# Keep the nucleosomes directly on top of one another
+STARTHELIX 0D0 0D0 10D0 0D0 0D0 0D0
+# the following lines overwrite the helix coordinates
+# when reading in from the database
+# since for nucleosomes on top of each other, the helix coords are poorly defined
+STARTHELH 0D0
+STARTHELT 0D0
+STARTHELR 10D0
+STARTHELA 0D0
+STARTHELB 0D0
+STARTHELG 0D0
+# All helix coordinates are held fixed
+FIXHELIXPARAM 1 2 3 4 5 6
+
+# Print out individual energy parts (bend, twist, stretch,
+# nucleosome-nucleosome sterics, linker-linker sterics, nuc-linker sterics)
+PRINTENERGYPARTS
+
+# ------------------------------
+# Edge geometry and bound DNA parameters were obtained by:
+# ../scripts/dnaloopFromPDB.py 1KX5.pdb param.ex.singlenuc 10 110
+# and correspond to a loop fixed between the 10th and 110th bound basepair
+# view 1KX5-dnaloop.pdb in PyMOL with @scripts/viewnucleosome.pml
+# to see these edge conditions on an actual
+# nucleosome structure
+# -----------------------------
+POSM         3.8927033239D0         0.7242180976D0         1.4791522805D0
+POSP        -1.7721833402D0         4.1144077434D0        -1.5049770068D0
+BENDTANM         0.2766395166D0        -0.9424684794D0        -0.1876798957D0
+BENDTANP         0.9515942834D0         0.2803700070D0         0.1259403788D0
+XAXM        -0.4192764244D0        -0.2941070189D0         0.8588994944D0
+XAXP         0.2700865792D0        -0.5672055162D0        -0.7780302964D0
+FILLBEAD   -4.485D0   2.910D0  -1.507D0  -4.439D0   3.017D0  -2.134D0
+FILLBEAD   -4.240D0   3.152D0  -1.530D0  -4.377D0   3.482D0  -1.872D0
+FILLBEAD   -3.929D0   3.275D0  -1.443D0  -4.149D0   3.715D0  -1.514D0
+FILLBEAD   -3.552D0   3.244D0  -1.344D0  -3.820D0   3.797D0  -1.137D0
+FILLBEAD   -3.249D0   3.380D0  -1.338D0  -3.454D0   3.715D0  -0.816D0
+FILLBEAD   -2.997D0   3.619D0  -1.287D0  -2.966D0   3.586D0  -0.827D0
+FILLBEAD   -2.689D0   3.745D0  -1.500D0  -2.595D0   3.370D0  -0.975D0
+FILLBEAD   -2.368D0   3.819D0  -1.415D0  -2.246D0   3.373D0  -1.308D0
+FILLBEAD   -2.078D0   3.969D0  -1.485D0  -1.966D0   3.550D0  -1.697D0
+FILLBEAD   -1.772D0   4.114D0  -1.505D0  -1.643D0   3.840D0  -1.881D0
+FILLBEAD    3.893D0   0.724D0   1.479D0   3.614D0   0.547D0   2.044D0
+FILLBEAD    4.001D0   0.432D0   1.404D0   3.484D0   0.225D0   1.732D0
+FILLBEAD    4.119D0   0.101D0   1.324D0   3.464D0   0.067D0   1.265D0
+FILLBEAD    4.057D0  -0.213D0   1.239D0   3.717D0  -0.105D0   0.859D0
+FILLBEAD    4.260D0  -0.570D0   1.290D0   4.098D0  -0.389D0   0.664D0
+FILLBEAD    4.199D0  -0.889D0   1.151D0   4.355D0  -0.834D0   0.695D0
+FILLBEAD    4.090D0  -1.225D0   1.278D0   4.593D0  -1.255D0   0.818D0
+FILLBEAD    4.042D0  -1.529D0   1.097D0   4.518D0  -1.652D0   1.046D0
+FILLBEAD    3.890D0  -1.832D0   1.094D0   4.274D0  -2.051D0   1.342D0
+FILLBEAD    3.672D0  -2.120D0   1.042D0   3.867D0  -2.251D0   1.465D0
+FILLBEAD    3.484D0  -2.373D0   0.966D0   3.398D0  -2.351D0   1.454D0
+FILLBEAD    3.254D0  -2.607D0   0.876D0   2.961D0  -2.461D0   1.234D0
+FILLBEAD    3.052D0  -2.859D0   0.789D0   2.540D0  -2.491D0   0.953D0
+FILLBEAD    2.873D0  -3.151D0   0.729D0   2.414D0  -2.710D0   0.541D0
+FILLBEAD    2.593D0  -3.343D0   0.645D0   2.426D0  -3.104D0   0.232D0
+FILLBEAD    2.495D0  -3.704D0   0.857D0   2.400D0  -3.625D0   0.211D0
+FILLBEAD    2.212D0  -3.921D0   0.952D0   2.333D0  -4.100D0   0.339D0
+FILLBEAD    1.885D0  -4.012D0   0.838D0   2.113D0  -4.427D0   0.559D0
+FILLBEAD    1.492D0  -3.969D0   0.967D0   1.751D0  -4.565D0   0.911D0
+FILLBEAD    1.228D0  -4.163D0   1.017D0   1.399D0  -4.552D0   1.284D0
+FILLBEAD    0.866D0  -4.193D0   1.024D0   1.023D0  -4.327D0   1.471D0
+FILLBEAD    0.522D0  -4.210D0   1.052D0   0.557D0  -4.101D0   1.514D0
+FILLBEAD    0.206D0  -4.264D0   1.111D0   0.157D0  -3.737D0   1.490D0
+FILLBEAD   -0.123D0  -4.206D0   1.241D0  -0.251D0  -3.752D0   1.288D0
+FILLBEAD   -0.452D0  -4.312D0   1.272D0  -0.529D0  -3.814D0   0.869D0
+FILLBEAD   -0.779D0  -4.314D0   1.347D0  -0.876D0  -4.087D0   0.739D0
+FILLBEAD   -1.109D0  -4.321D0   1.476D0  -1.206D0  -4.472D0   0.851D0
+FILLBEAD   -1.464D0  -4.330D0   1.455D0  -1.559D0  -4.711D0   1.154D0
+FILLBEAD   -1.732D0  -4.119D0   1.652D0  -1.916D0  -4.727D0   1.536D0
+FILLBEAD   -2.042D0  -3.960D0   1.531D0  -2.246D0  -4.525D0   1.742D0
+FILLBEAD   -2.334D0  -3.813D0   1.455D0  -2.420D0  -4.148D0   2.008D0
+FILLBEAD   -2.665D0  -3.758D0   1.521D0  -2.673D0  -3.716D0   1.991D0
+FILLBEAD   -2.968D0  -3.618D0   1.322D0  -2.745D0  -3.246D0   1.793D0
+FILLBEAD   -3.231D0  -3.402D0   1.370D0  -2.984D0  -3.001D0   1.441D0
+FILLBEAD   -3.537D0  -3.296D0   1.329D0  -3.328D0  -2.914D0   1.123D0
+FILLBEAD   -3.892D0  -3.285D0   1.484D0  -3.775D0  -2.902D0   0.974D0
+FILLBEAD   -4.220D0  -3.202D0   1.523D0  -4.243D0  -3.124D0   0.877D0
+FILLBEAD   -4.483D0  -2.974D0   1.504D0  -4.644D0  -3.213D0   1.142D0

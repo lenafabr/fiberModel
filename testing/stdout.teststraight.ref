@@ -1,0 +1,195 @@
+ Reading parameter file: param.teststraight                                                                                  
+ Initiating Mersenne twister random number generator with seed:    35573144
+ \n------------Parameter values : -------------------
+ ACTION: GETSTRUCT
+ Output file: teststraight.out
+ Linker length, number of segments:   17.000000000000000               10
+ Nucleosome geometry (+ end):
+      DNA attachment position:     4.504006839         2.942122019         1.503926924    
+                  DNA tangent:    0.9118115054       -0.3955722276        0.1101017318    
+                   DNA x-axis:    0.3232850519        0.5262889892       -0.7864519534    
+ Nucleosome geometry (- end):
+      DNA attachment position:     4.464489717        -2.942122019        -1.506668915    
+                  DNA tangent:   -0.8980653447       -0.4196238339        0.1318881139    
+                   DNA x-axis:   -0.6787280077E-01   -0.1640488082       -0.9841144605    
+ DNA twist density:   1.7667262637119554     
+Bend, twist, stretch moduli:     50.00000000         110.0000000         268.2927000    
+ External tension:   0.0000000000000000     
+ Nucleosome steric radius and height:   5.2000000000000002        5.5000000000000000     
+ ----------------------------------------------------
+ TABULATING MINIMAL APPROACH DISTANCES...
+ Tabulating cylindrical sterics for R, L, npt:   5.2000000000000002        5.5000000000000000        5.2000000000000002        5.5000000000000000               50          50          50
+ I:           1
+ I:           2
+ I:           3
+ I:           4
+ I:           5
+ I:           6
+ I:           7
+ I:           8
+ I:           9
+ I:          10
+ I:          11
+ I:          12
+ I:          13
+ I:          14
+ I:          15
+ I:          16
+ I:          17
+ I:          18
+ I:          19
+ I:          20
+ I:          21
+ I:          22
+ I:          23
+ I:          24
+ I:          25
+ I:          26
+ I:          27
+ I:          28
+ I:          29
+ I:          30
+ I:          31
+ I:          32
+ I:          33
+ I:          34
+ I:          35
+ I:          36
+ I:          37
+ I:          38
+ I:          39
+ I:          40
+ I:          41
+ I:          42
+ I:          43
+ I:          44
+ I:          45
+ I:          46
+ I:          47
+ I:          48
+ I:          49
+ I:          50
+ SETTING UP CUBIC INTERPOLATION...
+ GETTING DERIVATIVES...
+ GETTING SPLINE COEFFICIENTS...
+ OUTPUTTING DATA TO FILE:nuccylinder.bin                                                                                     
+ TABULATING MINIMAL APPROACH DISTANCES...
+ Tabulating cylindrical sterics for R, L, npt:   1.0000000000000000        1.7000000000000000        1.0000000000000000        1.7000000000000000               50          50          50
+ I:           1
+ I:           2
+ I:           3
+ I:           4
+ I:           5
+ I:           6
+ I:           7
+ I:           8
+ I:           9
+ I:          10
+ I:          11
+ I:          12
+ I:          13
+ I:          14
+ I:          15
+ I:          16
+ I:          17
+ I:          18
+ I:          19
+ I:          20
+ I:          21
+ I:          22
+ I:          23
+ I:          24
+ I:          25
+ I:          26
+ I:          27
+ I:          28
+ I:          29
+ I:          30
+ I:          31
+ I:          32
+ I:          33
+ I:          34
+ I:          35
+ I:          36
+ I:          37
+ I:          38
+ I:          39
+ I:          40
+ I:          41
+ I:          42
+ I:          43
+ I:          44
+ I:          45
+ I:          46
+ I:          47
+ I:          48
+ I:          49
+ I:          50
+ SETTING UP CUBIC INTERPOLATION...
+ GETTING DERIVATIVES...
+ GETTING SPLINE COEFFICIENTS...
+ OUTPUTTING DATA TO FILE:segcylinderL50.bin                                                                                  
+ TABULATING MINIMAL APPROACH DISTANCES...
+ Tabulating cylindrical sterics for R, L, npt:   1.0000000000000000        1.7000000000000000        5.2000000000000002        5.5000000000000000               50          50          50
+ I:           1
+ I:           2
+ I:           3
+ I:           4
+ I:           5
+ I:           6
+ I:           7
+ I:           8
+ I:           9
+ I:          10
+ I:          11
+ I:          12
+ I:          13
+ I:          14
+ I:          15
+ I:          16
+ I:          17
+ I:          18
+ I:          19
+ I:          20
+ I:          21
+ I:          22
+ I:          23
+ I:          24
+ I:          25
+ I:          26
+ I:          27
+ I:          28
+ I:          29
+ I:          30
+ I:          31
+ I:          32
+ I:          33
+ I:          34
+ I:          35
+ I:          36
+ I:          37
+ I:          38
+ I:          39
+ I:          40
+ I:          41
+ I:          42
+ I:          43
+ I:          44
+ I:          45
+ I:          46
+ I:          47
+ I:          48
+ I:          49
+ I:          50
+ SETTING UP CUBIC INTERPOLATION...
+ GETTING DERIVATIVES...
+ GETTING SPLINE COEFFICIENTS...
+ OUTPUTTING DATA TO FILE:nucsegcylinderL50.bin                                                                               
+ Chain has been set up with helix coordinates:   4.9074373271871750        2.2724527119865603        12.760816795986972        3.0548487445754597       0.13366057029783257       7.63469959448599411E-002
+ Getting the starting structure and dumping into file: teststraight.out                                                                                    
+ Regular helix coordinates (h,theta,R,alpha,beta,gamma):    4.9074      2.2725      12.761      3.0548     0.13366     0.76347E-01
+ Overall fiber diameter :      35.9833615677924    
+ Chain energy:    -0.653072367426551E-13
+ Energy parts (bend, twist, stretch,  nuc-nuc sterics, seg-seg sterics, nuc-seg sterics):   -0.6530723674E-13    0.9889763554E-27    0.1595123255E-27     0.000000000         0.000000000         0.000000000    
+ Nucleosome distances:
+     12.871         10.613         10.127         21.867         20.754         25.793         34.364         33.941         41.150         46.958         47.859         56.115         59.952         63.255         70.679         73.563         78.576         84.908         87.324         93.672    

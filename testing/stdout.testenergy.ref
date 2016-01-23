@@ -1,0 +1,41 @@
+ Reading parameter file: param.testenergy                                                                                    
+ Initiating Mersenne twister random number generator with seed:    43110511
+ ------------Parameter values : -------------------
+ ACTION: GETSTRUCT
+ Output file: testenergy.out
+ Linker length, number of segments:   17.000000000000000               10
+ Nucleosome geometry (+ end):
+      DNA attachment position:     4.504006839         2.942122019         1.503926924    
+                  DNA tangent:    0.9118115054       -0.3955722276        0.1101017318    
+                   DNA x-axis:    0.3232850519        0.5262889892       -0.7864519534    
+ Nucleosome geometry (- end):
+      DNA attachment position:     4.464489717        -2.942122019        -1.506668915    
+                  DNA tangent:   -0.8980653447       -0.4196238339        0.1318881139    
+                   DNA x-axis:   -0.6787280077E-01   -0.1640488082       -0.9841144605    
+ DNA twist density:   1.7667262637119554     
+ Restarting structure from file: testenergy.start.out                                                                                
+ All linker segment and nucleosome positions will be read directly from restart file.
+ Bend, twist, stretch moduli:     50.00000000         110.0000000         268.2927000    
+ External tension:   0.0000000000000000     
+ Nucleosome steric radius and height:   5.2000000000000002        5.5000000000000000     
+ Maximum repeat number for interactions          20
+ Output file, dump file: testenergy.out testenergy.dump.out
+ ----------------------------------------------------
+ READING CYLINDER DATA FROM FILE:nuccylinder.bin
+ Cylinder data pts used:          50          50          50
+ Cylinder radius and height:5.2000    5.2000    5.5000    5.5000    
+ READING CYLINDER DATA FROM FILE:segcylinderL50.bin
+ Cylinder data pts used:          50          50          50
+ Cylinder radius and height:1.0000    1.0000    1.7000    1.7000    
+ READING CYLINDER DATA FROM FILE:nucsegcylinderL50.bin
+ Cylinder data pts used:          50          50          50
+ Cylinder radius and height:1.0000    5.2000    1.7000    5.5000    
+ Reading structure information from file: testenergy.start.out           2
+ Chain has been set up with helix coordinates:  0.99098999999999671        4.5139802057806202        10.824000123801557        3.0511303370001466        3.0173325590842284        5.4731394765123902     
+ Getting the starting structure and dumping into file: testenergy.out                                                                                      
+ Regular helix coordinates (h,theta,R,alpha,beta,gamma):   0.99099      4.5140      10.824      3.0511      3.0173      5.4731    
+ Overall fiber diameter :      32.1185458015253    
+ Chain energy:      4911.76444119777    
+ Energy parts (bend, twist, stretch,  nuc-nuc sterics, seg-seg sterics, nuc-seg sterics):     15.32343562        0.2417692394        0.3545398327         2361.444641        0.7401047336E-03     2534.399315    
+ Nucleosome distances:
+     6.2592         10.863       -0.37659E-02    -1.5367         10.526         8.1265         1.0984         6.3073         12.087         4.9490         6.2839         12.372         11.498         8.2150         12.543         16.315         12.997         12.394         18.266         18.592    

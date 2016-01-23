@@ -1,0 +1,59 @@
+ Reading parameter file: param.testoptim                                                                                     
+ Initiating Mersenne twister random number generator with seed:    35556474
+ \n------------Parameter values : -------------------
+ ACTION: OPTIMIZE
+ Output file: testoptim.out
+ Linker length, number of segments:   17.000000000000000               10
+ Nucleosome geometry (+ end):
+      DNA attachment position:     4.504006839         2.942122019         1.503926924    
+                  DNA tangent:    0.9118115054       -0.3955722276        0.1101017318    
+                   DNA x-axis:    0.3232850519        0.5262889892       -0.7864519534    
+ Nucleosome geometry (- end):
+      DNA attachment position:     4.464489717        -2.942122019        -1.506668915    
+                  DNA tangent:   -0.8980653447       -0.4196238339        0.1318881139    
+                   DNA x-axis:   -0.6787280077E-01   -0.1640488082       -0.9841144605    
+ DNA twist density:   1.7667262637119554     
+ Fixed helix parameters: F F T F F F
+Bend, twist, stretch moduli:     50.00000000         110.0000000         268.2927000    
+ External tension:   0.0000000000000000     
+ Nucleosome steric radius and height:   5.2000000000000002        5.5000000000000000     
+ ----------------------------------------------------
+ READING CYLINDER DATA FROM FILE:nuccylinder.bin
+ Cylinder data pts used:          50          50          50
+ Cylinder radius and height:5.2000    5.2000    5.5000    5.5000    
+ READING CYLINDER DATA FROM FILE:segcylinderL50.bin
+ Cylinder data pts used:          50          50          50
+ Cylinder radius and height:1.0000    1.0000    1.7000    1.7000    
+ READING CYLINDER DATA FROM FILE:nucsegcylinderL50.bin
+ Cylinder data pts used:          50          50          50
+ Cylinder radius and height:1.0000    5.2000    1.7000    5.5000    
+ Reading structure information from file: testenergy.start.out           2
+ Chain has been set up with helix coordinates:  0.99098999999999671        4.5139802057806202        13.000000000000000        3.0511303370001466        3.0173325590842284        5.4731394765123902     
+Starting helix params (h, theta, R, alpha, beta, gamma):    0.9909900000         4.513980206         13.00000000         3.051130337         3.017332559         5.473139477    
+ Initial chain energy:      2748.32530032567    
+ Initial energy parts :(bend, twist, stretch, nuc-nuc sterics,  seg-seg sterics, nuc-seg sterics)   21.550      19.203      610.67      891.23     0.74010E-03  1205.7    
+Running BFGS optimization on the structure. Tolerance:     0.100000000000000E-03
+ Optimization attempt:            1
+K,STP,ENERGY,RMS, H:         0        1.0000000000     2748.3253003257               196146615.5            0.9909900000
+K,STP,ENERGY,RMS, H:       100        0.1000000000      135.8869759837               996.2149719            1.0791908437
+K,STP,ENERGY,RMS, H:       200        1.0000000000       60.2958945279               147.9033570            0.9497721889
+K,STP,ENERGY,RMS, H:       300        1.0000000000       34.8617416142               117.5847184            0.8407845826
+K,STP,ENERGY,RMS, H:       400        1.0000000000       23.6759774509               88.10702937            0.8924547960
+K,STP,ENERGY,RMS, H:       500        1.0000000000       13.5372061800               10309.50320            0.8567372146
+K,STP,ENERGY,RMS, H:       600        1.0000000000        9.5176985027               423.2487370            0.8388448070
+K,STP,ENERGY,RMS, H:       700        1.0000000000        7.5243844755               18.20797627            0.8119846086
+K,STP,ENERGY,RMS, H:       800        1.0000000000        4.5082531868              0.5897483475            0.8337753189
+K,STP,ENERGY,RMS, H:       900        1.0000000000        3.9562221990               5.733726550            0.9370809251
+K,STP,ENERGY,RMS, H:      1000        1.0000000000        3.5354056571               66.65425889            0.9616955203
+K,STP,ENERGY,RMS, H:      1100        1.0000000000        3.1777971445              0.8089672261            1.0306634353
+K,STP,ENERGY,RMS, H:      1200        1.0000000000        2.4351764493              0.9940604856E-01        1.0970982661
+K,STP,ENERGY,RMS, H:      1300        0.1000000000        1.9399316049              0.1380896958            0.8864695480
+K,STP,ENERGY,RMS, H:      1400        0.1000000000        1.8897784726              0.1929361897E-01        0.8828687879
+Energy, RMS force after optimization:     1.852805546        0.9193739937E-02
+ Successfully optimized!
+Final helix parameters: 0.85975      4.5149      13.000      2.8284      3.4949      5.9241    
+Final energy:      1.85280554606336    
+ Outputing final structure into file: testoptim.out                                                                                       
+ Energy parts (bend, twist, stretch,  nuc-nuc sterics, seg-seg sterics, nuc-seg sterics):  1.7099     0.14246     0.36483E-03 0.31533E-09 0.50200E-04  0.0000    
+ Overall fiber diameter :      36.8742531373978    
+ Replicating chain to           30  bends and outputting into testoptim.replic.out
